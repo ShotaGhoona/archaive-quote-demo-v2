@@ -72,7 +72,7 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <div className="-m-6 flex flex-col h-full bg-card">
+      <div className="flex flex-col h-full bg-card">
         {/* Top-level category tabs */}
         <div className="border-b border-border px-6 pt-4 pb-0 shrink-0 bg-card">
           <div className="flex items-center gap-2 mb-3">

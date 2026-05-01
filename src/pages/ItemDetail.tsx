@@ -34,7 +34,9 @@ export default function ItemDetail() {
   if (isLoading) {
     return (
       <AppLayout>
-        <PageSkeleton />
+        <div className="h-full overflow-auto p-6">
+          <PageSkeleton />
+        </div>
       </AppLayout>
     );
   }
@@ -42,11 +44,13 @@ export default function ItemDetail() {
   if (!item) {
     return (
       <AppLayout>
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">アイテムが見つかりません</p>
-          <Button variant="link" onClick={() => navigate("/items")}>
-            一覧に戻る
-          </Button>
+        <div className="h-full overflow-auto p-6">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">アイテムが見つかりません</p>
+            <Button variant="link" onClick={() => navigate("/items")}>
+              一覧に戻る
+            </Button>
+          </div>
         </div>
       </AppLayout>
     );
@@ -63,53 +67,55 @@ export default function ItemDetail() {
 
   return (
     <AppLayout>
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/items")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          一覧に戻る
-        </Button>
-      </div>
+      <div className="h-full overflow-auto p-6">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/items")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            一覧に戻る
+          </Button>
+        </div>
 
-      <div className="max-w-2xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{item.item_code}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">品名</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="remarks">備考</Label>
-              <Textarea
-                id="remarks"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>取引先</Label>
-              <p className="text-sm text-muted-foreground">
-                {item.customer?.name ?? "-"}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>作成日</Label>
-              <p className="text-sm text-muted-foreground">
-                {item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "-"}
-              </p>
-            </div>
-            <Button onClick={handleSave} disabled={updateItem.isPending}>
-              {updateItem.isPending ? "保存中..." : "保存"}
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="max-w-2xl space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{item.item_code}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">品名</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="remarks">備考</Label>
+                <Textarea
+                  id="remarks"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>取引先</Label>
+                <p className="text-sm text-muted-foreground">
+                  {item.customer?.name ?? "-"}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>作成日</Label>
+                <p className="text-sm text-muted-foreground">
+                  {item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "-"}
+                </p>
+              </div>
+              <Button onClick={handleSave} disabled={updateItem.isPending}>
+                {updateItem.isPending ? "保存中..." : "保存"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );
