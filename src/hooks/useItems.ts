@@ -1,37 +1,13 @@
-/**
- * サンプルCRUDフック - Lovableパターン
- *
- * このファイルをコピーして新しいエンティティのフックを作成してください。
- * 手順：
- *   1. ファイル名を useXxx.ts に変更
- *   2. "items" を対象のテーブル名に置換
- *   3. 型定義を調整
- *   4. 必要に応じてクエリのselect文を変更（JOINなど）
- */
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
 
-// ============================================
-// 型定義（supabase gen types で自動生成した型に置き換え可能）
-// ============================================
+export type Item = Database["public"]["Tables"]["items"]["Row"];
+export type ItemInsert = Database["public"]["Tables"]["items"]["Insert"];
+export type ItemUpdate = Database["public"]["Tables"]["items"]["Update"];
 
-export interface Item {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// ============================================
-// クエリ（読み取り）
-// ============================================
-
-/** アイテム一覧を取得 */
+/** Item 一覧（顧客名を JOIN で取得） */
 export function useItems() {
   const { user } = useAuth();
 
@@ -40,16 +16,16 @@ export function useItems() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("items")
-        .select("*")
+        .select("*, customer:customers(id, name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Item[];
+      return data;
     },
     enabled: !!user,
   });
 }
 
-/** 単一アイテムを取得 */
+/** 単一 Item */
 export function useItem(id: string) {
   const { user } = useAuth();
 
@@ -58,33 +34,25 @@ export function useItem(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("items")
-        .select("*")
+        .select("*, customer:customers(id, name)")
         .eq("id", id)
         .single();
       if (error) throw error;
-      return data as Item;
+      return data;
     },
     enabled: !!user && !!id,
   });
 }
 
-// ============================================
-// ミューテーション（書き込み）
-// ============================================
-
-/** アイテムを作成 */
 export function useCreateItem() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (input: { title: string; description?: string }) => {
+    mutationFn: async (input: Omit<ItemInsert, "created_by">) => {
       const { data, error } = await supabase
         .from("items")
-        .insert({
-          ...input,
-          created_by: user!.id,
-        })
+        .insert({ ...input, created_by: user!.id })
         .select()
         .single();
       if (error) throw error;
@@ -96,20 +64,11 @@ export function useCreateItem() {
   });
 }
 
-/** アイテムを更新 */
 export function useUpdateItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      ...updates
-    }: {
-      id: string;
-      title?: string;
-      description?: string;
-      status?: string;
-    }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & ItemUpdate) => {
       const { data, error } = await supabase
         .from("items")
         .update(updates)
@@ -126,7 +85,6 @@ export function useUpdateItem() {
   });
 }
 
-/** アイテムを削除 */
 export function useDeleteItem() {
   const queryClient = useQueryClient();
 

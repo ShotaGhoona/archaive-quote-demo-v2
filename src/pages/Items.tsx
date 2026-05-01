@@ -28,16 +28,18 @@ import { toast } from "sonner";
 
 function CreateItemDialog() {
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState("");
+  const [itemCode, setItemCode] = useState("");
+  const [name, setName] = useState("");
   const createItem = useCreateItem();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!itemCode.trim() || !name.trim()) return;
     try {
-      await createItem.mutateAsync({ title: title.trim() });
+      await createItem.mutateAsync({ item_code: itemCode.trim(), name: name.trim() });
       toast.success("アイテムを作成しました");
-      setTitle("");
+      setItemCode("");
+      setName("");
       setOpen(false);
     } catch (error: any) {
       toast.error(error.message || "作成に失敗しました");
@@ -58,12 +60,22 @@ function CreateItemDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">タイトル</Label>
+            <Label htmlFor="item_code">品番</Label>
             <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="タイトルを入力"
+              id="item_code"
+              value={itemCode}
+              onChange={(e) => setItemCode(e.target.value)}
+              placeholder="例: ABC-003"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="name">品名</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="品名を入力"
               required
             />
           </div>
@@ -114,8 +126,9 @@ export default function Items() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>タイトル</TableHead>
-              <TableHead>ステータス</TableHead>
+              <TableHead>品番</TableHead>
+              <TableHead>品名</TableHead>
+              <TableHead>取引先</TableHead>
               <TableHead>作成日</TableHead>
               <TableHead className="w-[100px]">操作</TableHead>
             </TableRow>
@@ -127,12 +140,17 @@ export default function Items() {
                 className="cursor-pointer"
                 onClick={() => navigate(`/items/${item.id}`)}
               >
-                <TableCell className="font-medium">{item.title}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary">{item.status || "draft"}</Badge>
+                  <Badge variant="secondary">{item.item_code}</Badge>
+                </TableCell>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {item.customer?.name ?? "-"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {new Date(item.created_at).toLocaleDateString("ja-JP")}
+                  {item.created_at
+                    ? new Date(item.created_at).toLocaleDateString("ja-JP")
+                    : "-"}
                 </TableCell>
                 <TableCell>
                   <Button
