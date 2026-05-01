@@ -6,6 +6,7 @@ import { PageSkeleton } from "@/components/shared/PageSkeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -20,11 +21,13 @@ export default function ItemDetail() {
   const navigate = useNavigate();
   const { data: item, isLoading } = useItem(id!);
   const updateItem = useUpdateItem();
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   useEffect(() => {
     if (item) {
-      setTitle(item.title);
+      setName(item.name);
+      setRemarks(item.remarks ?? "");
     }
   }, [item]);
 
@@ -51,7 +54,7 @@ export default function ItemDetail() {
 
   const handleSave = async () => {
     try {
-      await updateItem.mutateAsync({ id: item.id, title });
+      await updateItem.mutateAsync({ id: item.id, name, remarks });
       toast.success("保存しました");
     } catch (error: any) {
       toast.error(error.message || "保存に失敗しました");
@@ -70,26 +73,37 @@ export default function ItemDetail() {
       <div className="max-w-2xl space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>アイテム詳細</CardTitle>
+            <CardTitle>{item.item_code}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">タイトル</Label>
+              <Label htmlFor="name">品名</Label>
               <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="remarks">備考</Label>
+              <Textarea
+                id="remarks"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>取引先</Label>
+              <p className="text-sm text-muted-foreground">
+                {item.customer?.name ?? "-"}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>作成日</Label>
               <p className="text-sm text-muted-foreground">
-                {new Date(item.created_at).toLocaleString("ja-JP")}
+                {item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "-"}
               </p>
-            </div>
-            <div className="space-y-2">
-              <Label>ID</Label>
-              <p className="text-sm text-muted-foreground font-mono">{item.id}</p>
             </div>
             <Button onClick={handleSave} disabled={updateItem.isPending}>
               {updateItem.isPending ? "保存中..." : "保存"}
