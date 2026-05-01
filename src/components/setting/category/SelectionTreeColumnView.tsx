@@ -109,6 +109,7 @@ export function SelectionTreeColumnView({ category }: Props) {
         open={!!leafTarget}
         onOpenChange={(o) => !o && setLeafTarget(null)}
         parentNode={leafTarget}
+        category={category}
       />
     </div>
   );

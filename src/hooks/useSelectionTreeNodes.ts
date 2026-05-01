@@ -47,6 +47,32 @@ export function useSelectionTreeNodes(category: QuoteCategory | null) {
   });
 }
 
+/** ノードに計算式をリンク／解除 */
+export function useUpdateNodeFormula() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      nodeId: string;
+      formulaTemplateId: string | null;
+      category: QuoteCategory;
+    }) => {
+      const { data, error } = await supabase
+        .from("selection_tree_nodes")
+        .update({ formula_template_id: input.formulaTemplateId })
+        .eq("id", input.nodeId)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["selection_tree_nodes", variables.category],
+      });
+    },
+  });
+}
+
 /** ある親の子ノードを全削除（消去用） */
 export function useDeleteAllChildren() {
   const queryClient = useQueryClient();
