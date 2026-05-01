@@ -28,7 +28,6 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <PageHeader title="設定" description="アプリケーションの設定を管理" />
       <Tabs defaultValue="user" className="space-y-6">
         {/* 1段目: トップタブ */}
         <div className="border-b">
