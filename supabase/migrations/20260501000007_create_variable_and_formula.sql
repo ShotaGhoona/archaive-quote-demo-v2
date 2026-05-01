@@ -1,5 +1,6 @@
 -- ============================================
 -- 変数定義 + 計算式テンプレート
+-- 変数の値はノードマスタの values JSONB（PATH）/ 手入力（MANUAL）/ LOOKUP から解決
 -- variable_definitions.lookup_table_id の FK は LOOKUP マイグレーションで後付け
 -- ============================================
 
@@ -12,9 +13,11 @@ CREATE TABLE public.variable_definitions (
   unit_id UUID REFERENCES public.units(id) ON DELETE SET NULL,
   required BOOLEAN NOT NULL DEFAULT true,
   source public.variable_source NOT NULL,
-  source_entity TEXT,
-  source_field TEXT,
+  -- PATH 用: 経路上のノード値の JSON キー（例: 'density', 'unit_price', 'hourly_rate'）
+  path_key TEXT,
+  -- LOOKUP 用
   lookup_table_id UUID,
+  -- SELECT 型のオプション
   options JSONB,
   default_value NUMERIC,
   description TEXT,

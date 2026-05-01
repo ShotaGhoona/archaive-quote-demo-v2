@@ -8,8 +8,7 @@ export type VariableDefinitionInsert = Database["public"]["Tables"]["variable_de
 export type VariableDefinitionUpdate = Database["public"]["Tables"]["variable_definitions"]["Update"];
 
 export const VARIABLE_TYPES = ["NUMBER", "STRING", "BOOLEAN", "SELECT"] as const;
-export const VARIABLE_SOURCES = ["MANUAL", "MASTER", "LOOKUP", "PATH"] as const;
-export const VARIABLE_SOURCE_ENTITIES = ["MATERIAL", "PROCESS", "CUSTOMER"] as const;
+export const VARIABLE_SOURCES = ["MANUAL", "LOOKUP", "PATH"] as const;
 
 export function useVariableDefinitions() {
   const { user } = useAuth();

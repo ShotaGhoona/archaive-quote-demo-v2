@@ -1,6 +1,7 @@
 -- ============================================
 -- 選択肢の木（カテゴリごとの階層構造）
 -- 葉ノードは formula_template_id を持つ
+-- 中間ノードは node_master_value_id でナビゲーション
 -- ============================================
 
 CREATE TABLE public.selection_tree_nodes (
@@ -10,17 +11,10 @@ CREATE TABLE public.selection_tree_nodes (
   label TEXT NOT NULL,
   sort_order INT NOT NULL DEFAULT 0,
 
-  -- 役割 A: ナビゲーション
+  -- ナビゲーション: ノードマスタ値への参照（中間/葉どちらでも持てる）
   node_master_value_id UUID REFERENCES public.node_master_values(id) ON DELETE SET NULL,
 
-  -- 役割 B: マスタ参照（polymorphic、FK 制約なし）
-  master_entity TEXT,
-  master_id UUID,
-
-  -- 役割 C: 固定変数
-  fixed_variables JSONB,
-
-  -- 役割 D: 計算式テンプレート（葉のみ）
+  -- 葉として確定した場合の計算式
   formula_template_id UUID REFERENCES public.formula_templates(id) ON DELETE SET NULL,
 
   created_at TIMESTAMPTZ DEFAULT now(),

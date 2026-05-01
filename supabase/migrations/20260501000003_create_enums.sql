@@ -17,14 +17,8 @@ CREATE TYPE public.interpolation_type AS ENUM ('CONSTANT', 'LINEAR');
 -- 変数の型
 CREATE TYPE public.variable_type AS ENUM ('NUMBER', 'STRING', 'BOOLEAN', 'SELECT');
 
--- 変数のソース
-CREATE TYPE public.variable_source AS ENUM ('MANUAL', 'MASTER', 'LOOKUP', 'PATH');
-
--- 工程のコスト種別
-CREATE TYPE public.process_cost_type AS ENUM ('HOURLY', 'FIXED', 'UNIT');
-
--- 工程の区分
-CREATE TYPE public.process_category AS ENUM ('IN_HOUSE', 'OUTSOURCE', 'BOTH');
+-- 変数のソース（MANUAL: 手入力, LOOKUP: ルックアップ, PATH: 選択肢の木の経路から）
+CREATE TYPE public.variable_source AS ENUM ('MANUAL', 'LOOKUP', 'PATH');
 
 -- LOOKUP バージョンの状態
 CREATE TYPE public.lookup_version_status AS ENUM ('ACTIVE', 'ARCHIVED');

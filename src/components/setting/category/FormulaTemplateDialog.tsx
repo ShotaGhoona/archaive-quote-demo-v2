@@ -36,7 +36,6 @@ interface Props {
 
 const SOURCE_LABELS: Record<string, string> = {
   PATH: "パス（経路から取得）",
-  MASTER: "マスタ参照",
   LOOKUP: "LOOKUP参照",
   MANUAL: "手入力",
 };
@@ -75,7 +74,7 @@ export function FormulaTemplateDialog({
   // ソースごとにグループ化
   const grouped = useMemo(() => {
     const map = new Map<string, typeof variables>();
-    for (const src of ["PATH", "MASTER", "LOOKUP", "MANUAL"]) {
+    for (const src of ["PATH", "LOOKUP", "MANUAL"]) {
       map.set(src, []);
     }
     for (const v of variables ?? []) {

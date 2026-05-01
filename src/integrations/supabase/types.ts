@@ -248,53 +248,6 @@ export type Database = {
         }
         Relationships: []
       }
-      materials: {
-        Row: {
-          attributes: Json | null
-          category: string | null
-          created_at: string | null
-          id: string
-          material_code: string
-          name: string
-          remarks: string | null
-          unit_id: string | null
-          unit_price: number
-          updated_at: string | null
-        }
-        Insert: {
-          attributes?: Json | null
-          category?: string | null
-          created_at?: string | null
-          id?: string
-          material_code: string
-          name: string
-          remarks?: string | null
-          unit_id?: string | null
-          unit_price: number
-          updated_at?: string | null
-        }
-        Update: {
-          attributes?: Json | null
-          category?: string | null
-          created_at?: string | null
-          id?: string
-          material_code?: string
-          name?: string
-          remarks?: string | null
-          unit_id?: string | null
-          unit_price?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "materials_unit_id_fkey"
-            columns: ["unit_id"]
-            isOneToOne: false
-            referencedRelation: "units"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       node_master_values: {
         Row: {
           created_at: string | null
@@ -350,54 +303,6 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      processes: {
-        Row: {
-          attributes: Json | null
-          category: Database["public"]["Enums"]["process_category"]
-          cost_type: Database["public"]["Enums"]["process_cost_type"]
-          created_at: string | null
-          fixed_cost: number | null
-          hourly_rate: number | null
-          id: string
-          name: string
-          process_code: string
-          remarks: string | null
-          setup_time_default: number | null
-          unit_cost: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          attributes?: Json | null
-          category: Database["public"]["Enums"]["process_category"]
-          cost_type?: Database["public"]["Enums"]["process_cost_type"]
-          created_at?: string | null
-          fixed_cost?: number | null
-          hourly_rate?: number | null
-          id?: string
-          name: string
-          process_code: string
-          remarks?: string | null
-          setup_time_default?: number | null
-          unit_cost?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          attributes?: Json | null
-          category?: Database["public"]["Enums"]["process_category"]
-          cost_type?: Database["public"]["Enums"]["process_cost_type"]
-          created_at?: string | null
-          fixed_cost?: number | null
-          hourly_rate?: number | null
-          id?: string
-          name?: string
-          process_code?: string
-          remarks?: string | null
-          setup_time_default?: number | null
-          unit_cost?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -738,12 +643,9 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["quote_category"]
           created_at: string | null
-          fixed_variables: Json | null
           formula_template_id: string | null
           id: string
           label: string
-          master_entity: string | null
-          master_id: string | null
           node_master_value_id: string | null
           parent_id: string | null
           sort_order: number
@@ -752,12 +654,9 @@ export type Database = {
         Insert: {
           category: Database["public"]["Enums"]["quote_category"]
           created_at?: string | null
-          fixed_variables?: Json | null
           formula_template_id?: string | null
           id?: string
           label: string
-          master_entity?: string | null
-          master_id?: string | null
           node_master_value_id?: string | null
           parent_id?: string | null
           sort_order?: number
@@ -766,12 +665,9 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["quote_category"]
           created_at?: string | null
-          fixed_variables?: Json | null
           formula_template_id?: string | null
           id?: string
           label?: string
-          master_entity?: string | null
-          master_id?: string | null
           node_master_value_id?: string | null
           parent_id?: string | null
           sort_order?: number
@@ -838,10 +734,9 @@ export type Database = {
           label: string
           lookup_table_id: string | null
           options: Json | null
+          path_key: string | null
           required: boolean
           source: Database["public"]["Enums"]["variable_source"]
-          source_entity: string | null
-          source_field: string | null
           type: Database["public"]["Enums"]["variable_type"]
           unit_id: string | null
           updated_at: string | null
@@ -855,10 +750,9 @@ export type Database = {
           label: string
           lookup_table_id?: string | null
           options?: Json | null
+          path_key?: string | null
           required?: boolean
           source: Database["public"]["Enums"]["variable_source"]
-          source_entity?: string | null
-          source_field?: string | null
           type: Database["public"]["Enums"]["variable_type"]
           unit_id?: string | null
           updated_at?: string | null
@@ -872,10 +766,9 @@ export type Database = {
           label?: string
           lookup_table_id?: string | null
           options?: Json | null
+          path_key?: string | null
           required?: boolean
           source?: Database["public"]["Enums"]["variable_source"]
-          source_entity?: string | null
-          source_field?: string | null
           type?: Database["public"]["Enums"]["variable_type"]
           unit_id?: string | null
           updated_at?: string | null
@@ -910,8 +803,6 @@ export type Database = {
       lookup_match_type: "EXACT" | "RANGE" | "PREFIX"
       lookup_version_status: "ACTIVE" | "ARCHIVED"
       margin_mode: "CATEGORY" | "TOTAL" | "LOOKUP"
-      process_category: "IN_HOUSE" | "OUTSOURCE" | "BOTH"
-      process_cost_type: "HOURLY" | "FIXED" | "UNIT"
       quote_category:
         | "MATERIAL"
         | "IN_HOUSE"
@@ -919,7 +810,7 @@ export type Database = {
         | "PURCHASE"
         | "EXPENSE"
       rounding_method: "FLOOR" | "CEIL" | "ROUND"
-      variable_source: "MANUAL" | "MASTER" | "LOOKUP" | "PATH"
+      variable_source: "MANUAL" | "LOOKUP" | "PATH"
       variable_type: "NUMBER" | "STRING" | "BOOLEAN" | "SELECT"
     }
     CompositeTypes: {
@@ -1053,8 +944,6 @@ export const Constants = {
       lookup_match_type: ["EXACT", "RANGE", "PREFIX"],
       lookup_version_status: ["ACTIVE", "ARCHIVED"],
       margin_mode: ["CATEGORY", "TOTAL", "LOOKUP"],
-      process_category: ["IN_HOUSE", "OUTSOURCE", "BOTH"],
-      process_cost_type: ["HOURLY", "FIXED", "UNIT"],
       quote_category: [
         "MATERIAL",
         "IN_HOUSE",
@@ -1063,7 +952,7 @@ export const Constants = {
         "EXPENSE",
       ],
       rounding_method: ["FLOOR", "CEIL", "ROUND"],
-      variable_source: ["MANUAL", "MASTER", "LOOKUP", "PATH"],
+      variable_source: ["MANUAL", "LOOKUP", "PATH"],
       variable_type: ["NUMBER", "STRING", "BOOLEAN", "SELECT"],
     },
   },

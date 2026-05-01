@@ -25,7 +25,6 @@ import {
   useUpdateVariableDefinition,
   VARIABLE_TYPES,
   VARIABLE_SOURCES,
-  VARIABLE_SOURCE_ENTITIES,
   type VariableDefinition,
 } from "@/hooks/useVariableDefinitions";
 import { useUnits } from "@/hooks/useUnits";
@@ -37,7 +36,6 @@ interface Props {
 }
 
 const UNIT_NONE = "__none__";
-const ENTITY_NONE = "__none__";
 
 export function VariableDialog({ open, onOpenChange, target }: Props) {
   const createVar = useCreateVariableDefinition();
@@ -51,8 +49,7 @@ export function VariableDialog({ open, onOpenChange, target }: Props) {
   const [source, setSource] = useState<string>("MANUAL");
   const [unitId, setUnitId] = useState<string>(UNIT_NONE);
   const [required, setRequired] = useState(true);
-  const [sourceEntity, setSourceEntity] = useState<string>(ENTITY_NONE);
-  const [sourceField, setSourceField] = useState("");
+  const [pathKey, setPathKey] = useState("");
   const [defaultValue, setDefaultValue] = useState("");
   const [description, setDescription] = useState("");
 
@@ -64,8 +61,7 @@ export function VariableDialog({ open, onOpenChange, target }: Props) {
     setSource(target?.source ?? "MANUAL");
     setUnitId(target?.unit_id ?? UNIT_NONE);
     setRequired(target?.required ?? true);
-    setSourceEntity(target?.source_entity ?? ENTITY_NONE);
-    setSourceField(target?.source_field ?? "");
+    setPathKey((target as VariableDefinition & { path_key?: string | null })?.path_key ?? "");
     setDefaultValue(
       target?.default_value === null || target?.default_value === undefined
         ? ""
@@ -96,8 +92,7 @@ export function VariableDialog({ open, onOpenChange, target }: Props) {
       source,
       unit_id: unitId === UNIT_NONE ? null : unitId,
       required,
-      source_entity: source === "MASTER" && sourceEntity !== ENTITY_NONE ? sourceEntity : null,
-      source_field: source === "MASTER" ? sourceField.trim() || null : null,
+      path_key: source === "PATH" ? pathKey.trim() || null : null,
       default_value: defaultNum,
       description: description.trim() || null,
     };
@@ -202,41 +197,25 @@ export function VariableDialog({ open, onOpenChange, target }: Props) {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              {source === "MANUAL" && "ユーザーが手入力"}
-              {source === "MASTER" && "材料・工程・取引先などのマスタから引く"}
+              {source === "MANUAL" && "ユーザーが手入力（図面から読み取る値など）"}
               {source === "LOOKUP" && "LOOKUPテーブルから引く"}
-              {source === "PATH" && "選択肢の木を辿るパス変数"}
+              {source === "PATH" && "選択肢の木の経路上のノードマスタ値から取得"}
             </p>
           </div>
 
-          {source === "MASTER" && (
-            <div className="grid grid-cols-2 gap-3 rounded-md border p-3 bg-muted/30">
-              <div className="space-y-2">
-                <Label>マスタ種別</Label>
-                <Select value={sourceEntity} onValueChange={setSourceEntity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="選択" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ENTITY_NONE}>なし</SelectItem>
-                    {VARIABLE_SOURCE_ENTITIES.map((e) => (
-                      <SelectItem key={e} value={e}>
-                        {e}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="source_field">参照フィールド</Label>
-                <Input
-                  id="source_field"
-                  value={sourceField}
-                  onChange={(e) => setSourceField(e.target.value)}
-                  placeholder="例: hourly_rate"
-                  className="font-mono text-sm"
-                />
-              </div>
+          {source === "PATH" && (
+            <div className="rounded-md border p-3 bg-muted/30 space-y-2">
+              <Label htmlFor="path_key">参照キー</Label>
+              <Input
+                id="path_key"
+                value={pathKey}
+                onChange={(e) => setPathKey(e.target.value)}
+                placeholder="例: density / unit_price / hourly_rate"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                経路上のノードマスタ値の <code className="font-mono">values</code> JSONB から、このキーで値を取得します
+              </p>
             </div>
           )}
 
