@@ -564,6 +564,7 @@ export type Database = {
       }
       quote_formula_settings: {
         Row: {
+          category_g_templates: Json | null
           category_margins: Json | null
           enabled_categories: Json | null
           id: string
@@ -575,6 +576,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          category_g_templates?: Json | null
           category_margins?: Json | null
           enabled_categories?: Json | null
           id?: string
@@ -586,6 +588,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          category_g_templates?: Json | null
           category_margins?: Json | null
           enabled_categories?: Json | null
           id?: string

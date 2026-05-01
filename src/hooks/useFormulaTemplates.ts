@@ -31,6 +31,25 @@ export function useFormulaTemplates(category: QuoteCategory | null) {
   });
 }
 
+/** G テンプレート一覧（kind='G'、ビルトイン含む） */
+export function useGFormulaTemplates() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["formula_templates", "G"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("formula_templates")
+        .select("*")
+        .eq("kind", "G")
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user,
+  });
+}
+
 /** 単体取得 */
 export function useFormulaTemplate(id: string | null) {
   const { user } = useAuth();

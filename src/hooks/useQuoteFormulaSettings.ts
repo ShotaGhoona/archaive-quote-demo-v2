@@ -26,6 +26,56 @@ export function useQuoteFormulaSettings() {
   });
 }
 
+export function useUpdateCategoryGTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      category: QuoteCategory;
+      currentMap: Record<string, string | null>;
+      gTemplateId: string | null;
+    }) => {
+      const next = { ...input.currentMap, [input.category]: input.gTemplateId };
+      const { data, error } = await supabase
+        .from("quote_formula_settings")
+        .update({ category_g_templates: next })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quote_formula_settings"] });
+    },
+  });
+}
+
+export function useUpdateCategoryMargin() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      category: QuoteCategory;
+      currentMargins: Record<string, number>;
+      margin: number;
+    }) => {
+      const next = { ...input.currentMargins, [input.category]: input.margin };
+      const { data, error } = await supabase
+        .from("quote_formula_settings")
+        .update({ category_margins: next })
+        .eq("id", input.id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quote_formula_settings"] });
+    },
+  });
+}
+
 export function useToggleEnabledCategory() {
   const queryClient = useQueryClient();
   return useMutation({

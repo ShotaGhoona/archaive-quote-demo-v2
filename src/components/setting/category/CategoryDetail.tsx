@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useQuoteFormulaSettings";
 import { SelectionTreeColumnView } from "./SelectionTreeColumnView";
 import { FormulaTemplatesList } from "./FormulaTemplatesList";
+import { GFormulaSection } from "./GFormulaSection";
 
 interface Props {
   category: QuoteCategory;
@@ -109,9 +110,7 @@ export function CategoryDetail({ category }: Props) {
 
         <TabsContent value="g-formula" className="mt-0">
           <div className="max-w-6xl mx-auto px-6 py-6">
-            <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              G の式設定は今後実装予定です
-            </div>
+            <GFormulaSection category={category} />
           </div>
         </TabsContent>
       </Tabs>
