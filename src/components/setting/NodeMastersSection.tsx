@@ -24,16 +24,16 @@ export function NodeMastersSection() {
   const selected = nodeMasters?.find((nm) => nm.id === selectedId) ?? null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-6">
-        <NodeMasterList
-          nodeMasters={nodeMasters}
-          isLoading={isLoading}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          onCreateClick={() => setCreateOpen(true)}
-        />
+    <div className="flex h-full">
+      <NodeMasterList
+        nodeMasters={nodeMasters}
+        isLoading={isLoading}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        onCreateClick={() => setCreateOpen(true)}
+      />
 
+      <div className="flex-1 overflow-hidden">
         {selected ? (
           <NodeMasterValueTable
             nodeMaster={selected}
@@ -48,7 +48,7 @@ export function NodeMastersSection() {
             onSettingsClick={() => setSettingsOpen(true)}
           />
         ) : (
-          <div className="flex-1 min-w-0 flex items-center justify-center text-sm text-muted-foreground py-12">
+          <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
             左から種類を選択してください
           </div>
         )}
