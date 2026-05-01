@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { CustomersSection } from "./other-master/CustomersSection";
 import { UnitsSection } from "./other-master/UnitsSection";
 import { VariablesSection } from "./other-master/VariablesSection";
+import { LookupSection } from "./other-master/lookup/LookupSection";
 
 const otherMasters = [
   { id: "customers", label: "取引先", icon: Building2 },
@@ -80,9 +81,7 @@ export function OtherMastersSection() {
         {active === "customers" && <CustomersSection />}
         {active === "units" && <UnitsSection />}
         {active === "variables" && <VariablesSection />}
-        {active === "lookup" && (
-          <MasterPlaceholder label={current.label} Icon={current.icon} />
-        )}
+        {active === "lookup" && <LookupSection />}
       </div>
     </div>
   );
