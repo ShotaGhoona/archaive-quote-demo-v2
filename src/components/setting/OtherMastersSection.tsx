@@ -4,6 +4,9 @@ import type { LucideIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { CustomersSection } from "./other-master/CustomersSection";
+import { UnitsSection } from "./other-master/UnitsSection";
+import { VariablesSection } from "./other-master/VariablesSection";
 
 const otherMasters = [
   { id: "customers", label: "取引先", icon: Building2 },
@@ -74,7 +77,12 @@ export function OtherMastersSection() {
 
       {/* Right detail */}
       <div className="flex-1 overflow-hidden">
-        <MasterPlaceholder label={current.label} Icon={current.icon} />
+        {active === "customers" && <CustomersSection />}
+        {active === "units" && <UnitsSection />}
+        {active === "variables" && <VariablesSection />}
+        {active === "lookup" && (
+          <MasterPlaceholder label={current.label} Icon={current.icon} />
+        )}
       </div>
     </div>
   );
