@@ -10,7 +10,8 @@ CREATE TABLE public.items (
   customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
   drawing_url TEXT,
   remarks TEXT,
-  created_by UUID REFERENCES auth.users(id),
+  -- created_by は auth.users への soft reference（FK 制約は付けない、認証状態に依存しない）
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -28,7 +29,8 @@ CREATE POLICY "Write" ON public.items FOR ALL TO authenticated USING (true) WITH
 CREATE TABLE public.quotes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   item_id UUID NOT NULL REFERENCES public.items(id) ON DELETE CASCADE,
-  quote_number TEXT NOT NULL UNIQUE,
+  -- 表示用の番号。一意性は (item_id, version) で担保するので UNIQUE を付けない
+  quote_number TEXT NOT NULL,
   version INT NOT NULL DEFAULT 1,
 
   margin_mode public.margin_mode NOT NULL,
@@ -45,9 +47,12 @@ CREATE TABLE public.quotes (
   final_total NUMERIC,
 
   remarks TEXT,
-  created_by UUID REFERENCES auth.users(id),
+  -- soft reference（FK 制約なし）
+  created_by UUID,
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  -- 1 Item + version は一意 → upsert(onConflict="item_id,version") で冪等化
+  UNIQUE (item_id, version)
 );
 
 CREATE INDEX idx_quotes_item ON public.quotes(item_id);
@@ -68,9 +73,11 @@ CREATE TABLE public.quote_lots (
   computed_total NUMERIC,
   final_total NUMERIC,
   unit_price NUMERIC,
-  sort_order INT DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  -- 1 quote 内で sort_order は一意 → upsert で冪等化
+  UNIQUE (quote_id, sort_order)
 );
 
 CREATE INDEX idx_quote_lots_quote ON public.quote_lots(quote_id);

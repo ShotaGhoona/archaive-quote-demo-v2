@@ -523,7 +523,7 @@ export type Database = {
           is_default: boolean | null
           quantity: number
           quote_id: string
-          sort_order: number | null
+          sort_order: number
           unit_price: number | null
           updated_at: string | null
         }
@@ -535,7 +535,7 @@ export type Database = {
           is_default?: boolean | null
           quantity: number
           quote_id: string
-          sort_order?: number | null
+          sort_order?: number
           unit_price?: number | null
           updated_at?: string | null
         }
@@ -547,7 +547,7 @@ export type Database = {
           is_default?: boolean | null
           quantity?: number
           quote_id?: string
-          sort_order?: number | null
+          sort_order?: number
           unit_price?: number | null
           updated_at?: string | null
         }
