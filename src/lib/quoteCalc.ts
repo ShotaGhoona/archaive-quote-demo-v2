@@ -292,6 +292,24 @@ export function roundValue(
 }
 
 // ────────────────────────────────────────────────────────────────────
+// 上書き 3 レバーの適用
+// ────────────────────────────────────────────────────────────────────
+
+/**
+ * 採用値 = override_value があればそれ、無ければ computed * multiplier + adjustment
+ */
+export function applyOverrides(
+  computed: number | null,
+  multiplier: number,
+  adjustment: number,
+  overrideValue: number | null
+): number | null {
+  if (overrideValue != null) return overrideValue;
+  if (computed == null) return null;
+  return computed * multiplier + adjustment;
+}
+
+// ────────────────────────────────────────────────────────────────────
 // 中計（G式適用）
 // ────────────────────────────────────────────────────────────────────
 

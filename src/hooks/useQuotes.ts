@@ -153,7 +153,12 @@ export function useUpdateQuoteDetail() {
       selection_path?: string[];
       variable_values?: Record<string, unknown>;
       computed_value?: number | null;
+      final_value?: number | null;
+      multiplier?: number;
+      adjustment?: number;
+      override_value?: number | null;
       transport_cost?: number;
+      remarks?: string | null;
     }) => {
       const { id, quote_lot_id, ...rest } = input;
       const updates: Record<string, unknown> = {};
@@ -162,11 +167,13 @@ export function useUpdateQuoteDetail() {
         updates.formula_template_id = rest.formula_template_id;
       if (rest.selection_path !== undefined) updates.selection_path = rest.selection_path;
       if (rest.variable_values !== undefined) updates.variable_values = rest.variable_values;
-      if (rest.computed_value !== undefined) {
-        updates.computed_value = rest.computed_value;
-        updates.final_value = rest.computed_value;
-      }
+      if (rest.computed_value !== undefined) updates.computed_value = rest.computed_value;
+      if (rest.final_value !== undefined) updates.final_value = rest.final_value;
+      if (rest.multiplier !== undefined) updates.multiplier = rest.multiplier;
+      if (rest.adjustment !== undefined) updates.adjustment = rest.adjustment;
+      if (rest.override_value !== undefined) updates.override_value = rest.override_value;
       if (rest.transport_cost !== undefined) updates.transport_cost = rest.transport_cost;
+      if (rest.remarks !== undefined) updates.remarks = rest.remarks;
       const { data, error } = await supabase
         .from("quote_details")
         .update(updates)

@@ -47,7 +47,8 @@ export function QuotePanel({ quoteLotId }: Props) {
     for (const cat of QUOTE_CATEGORIES) {
       if (!enabled.includes(cat.id)) continue;
       const items = (details ?? []).filter((d) => d.category === cat.id);
-      const subtotals = items.map((d) => d.computed_value ?? 0);
+      // 上書き適用後の final_value を集計（無ければ computed_value にフォールバック）
+      const subtotals = items.map((d) => d.final_value ?? d.computed_value ?? 0);
       const transports = items.map((d) => d.transport_cost ?? 0);
 
       const gTplId = gMap[cat.id];
@@ -71,7 +72,8 @@ export function QuotePanel({ quoteLotId }: Props) {
   const roundedTotal = roundValue(grandTotal, roundingMethod, roundingDigits);
 
   // 有効化されたカテゴリのみ表示
-  const enabledCategoryIds = (settings?.enabled_categories ?? []) as QuoteCategory[];
+  const enabledCategoryIds =
+    (settings?.enabled_categories ?? []) as QuoteCategory[];
   const visibleCategories = QUOTE_CATEGORIES.filter((c) =>
     enabledCategoryIds.includes(c.id)
   );

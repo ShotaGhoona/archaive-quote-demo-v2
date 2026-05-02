@@ -23,6 +23,7 @@ import {
   type QuoteDetail,
 } from "@/hooks/useQuotes";
 import {
+  applyOverrides,
   evaluateFormula,
   resolveAllVariables,
   type ResolvedVariable,
@@ -30,6 +31,7 @@ import {
 import { useLookupContext } from "@/lib/useLookupContext";
 import { PathSelector } from "./PathSelector";
 import { VariableInputArea } from "./VariableInputArea";
+import { DetailEditDialog } from "./DetailEditDialog";
 
 interface Props {
   index: number;
@@ -43,6 +45,7 @@ export function EditableDetailCard({ index, category, detail }: Props) {
   const lookupContext = useLookupContext();
   const updateDetail = useUpdateQuoteDetail();
   const deleteDetail = useDeleteQuoteDetail();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // ローカル編集状態
   const [pathIds, setPathIds] = useState<string[]>(
@@ -105,6 +108,23 @@ export function EditableDetailCard({ index, category, detail }: Props) {
     return evaluateFormula(formulaTemplate.formula, scope);
   }, [formulaTemplate, resolved]);
 
+  // 上書き適用後の採用値
+  const finalValue = useMemo(
+    () =>
+      applyOverrides(
+        computedValue,
+        detail.multiplier ?? 1,
+        detail.adjustment ?? 0,
+        detail.override_value
+      ),
+    [computedValue, detail.multiplier, detail.adjustment, detail.override_value]
+  );
+
+  const hasOverrides =
+    (detail.multiplier ?? 1) !== 1 ||
+    (detail.adjustment ?? 0) !== 0 ||
+    detail.override_value != null;
+
   // ────────── auto-save (debounced) ──────────
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef<{
@@ -148,6 +168,7 @@ export function EditableDetailCard({ index, category, detail }: Props) {
           formula_template_id: formulaTemplate?.id ?? null,
           variable_values: variableValues,
           computed_value: computedValue,
+          final_value: finalValue,
         });
         lastSaved.current = {
           pathIds: [...pathIds],
@@ -225,6 +246,12 @@ export function EditableDetailCard({ index, category, detail }: Props) {
         </Tooltip>
       </div>
 
+      <DetailEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        detail={detail}
+      />
+
       {/* カード: 葉に到達したら表示 */}
       {leaf && formulaTemplate && (
         <Card className="ml-7 p-4">
@@ -263,10 +290,17 @@ export function EditableDetailCard({ index, category, detail }: Props) {
               {/* 小計（1行） */}
               <div className="flex-1 flex items-end">
                 <div className="flex items-baseline justify-between gap-2 w-full">
-                  <span className="text-sm text-muted-foreground">小計</span>
+                  <span className="text-sm text-muted-foreground">
+                    小計
+                    {hasOverrides && (
+                      <span className="ml-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        上書き
+                      </span>
+                    )}
+                  </span>
                   <div className="flex items-baseline gap-1.5">
                     <div className="font-mono">
-                      {computedValue == null ? (
+                      {finalValue == null ? (
                         <span className="text-2xl font-bold text-muted-foreground/40">
                           —
                         </span>
@@ -276,7 +310,7 @@ export function EditableDetailCard({ index, category, detail }: Props) {
                             ¥
                           </span>
                           <span className="text-2xl font-bold tabular-nums">
-                            {Math.round(computedValue).toLocaleString("ja-JP")}
+                            {Math.round(finalValue).toLocaleString("ja-JP")}
                           </span>
                         </>
                       )}
@@ -288,11 +322,12 @@ export function EditableDetailCard({ index, category, detail }: Props) {
                           size="sm"
                           className="h-7 w-7 p-0 self-center text-muted-foreground"
                           aria-label="編集"
+                          onClick={() => setEditDialogOpen(true)}
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>上書き編集（今後実装）</TooltipContent>
+                      <TooltipContent>上書き編集</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
