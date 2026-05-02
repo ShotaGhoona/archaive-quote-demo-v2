@@ -13,7 +13,6 @@ import {
   useToggleEnabledCategory,
 } from "@/hooks/useQuoteFormulaSettings";
 import { SelectionTreeColumnView } from "./SelectionTreeColumnView";
-import { FormulaTemplatesList } from "./FormulaTemplatesList";
 import { GFormulaSection } from "./GFormulaSection";
 
 interface Props {
@@ -86,9 +85,6 @@ export function CategoryDetail({ category }: Props) {
               <TabsTrigger value="tree" className={tabTriggerClass}>
                 選択肢の木
               </TabsTrigger>
-              <TabsTrigger value="formula-templates" className={tabTriggerClass}>
-                計算式テンプレート
-              </TabsTrigger>
               <TabsTrigger value="g-formula" className={tabTriggerClass}>
                 G の式
               </TabsTrigger>
@@ -99,12 +95,6 @@ export function CategoryDetail({ category }: Props) {
         <TabsContent value="tree" className="flex-1 min-h-0 mt-0 overflow-hidden">
           <div className="max-w-6xl mx-auto h-full px-6 py-6">
             <SelectionTreeColumnView category={category} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="formula-templates" className="mt-0">
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            <FormulaTemplatesList category={category} />
           </div>
         </TabsContent>
 

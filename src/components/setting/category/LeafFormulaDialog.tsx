@@ -26,7 +26,7 @@ import {
   useUpdateNodeFormula,
 } from "@/hooks/useSelectionTreeNodes";
 import { useFormulaTemplates } from "@/hooks/useFormulaTemplates";
-import { FormulaTemplateDialog } from "./FormulaTemplateDialog";
+import { FormulaDialog } from "@/components/setting/other-master/FormulaDialog";
 
 interface Props {
   open: boolean;
@@ -43,7 +43,8 @@ export function LeafFormulaDialog({
   parentNode,
   category,
 }: Props) {
-  const { data: templates, isLoading } = useFormulaTemplates(category);
+  // カテゴリ縛りなく全 F テンプレートから選べる（カテゴリ跨ぎ利用可）
+  const { data: templates, isLoading } = useFormulaTemplates();
   const updateNodeFormula = useUpdateNodeFormula();
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -194,10 +195,10 @@ export function LeafFormulaDialog({
         </DialogContent>
       </Dialog>
 
-      <FormulaTemplateDialog
+      <FormulaDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        category={category}
+        defaultCategory={category}
         target={null}
         onSaved={(id) => setSelectedId(id)}
       />

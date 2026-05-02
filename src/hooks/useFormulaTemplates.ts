@@ -10,24 +10,24 @@ export type FormulaTemplate =
 export type FormulaTemplateInsert =
   Database["public"]["Tables"]["formula_templates"]["Insert"];
 
-/** カテゴリの F テンプレート一覧 */
-export function useFormulaTemplates(category: QuoteCategory | null) {
+/**
+ * F テンプレート一覧
+ * - category 指定時: そのカテゴリのみ
+ * - category 未指定 / null: すべての F テンプレート
+ */
+export function useFormulaTemplates(category?: QuoteCategory | null) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["formula_templates", "F", category],
+    queryKey: ["formula_templates", "F", category ?? "__all__"],
     queryFn: async () => {
-      if (!category) return [] as FormulaTemplate[];
-      const { data, error } = await supabase
-        .from("formula_templates")
-        .select("*")
-        .eq("kind", "F")
-        .eq("category", category)
-        .order("created_at", { ascending: true });
+      let q = supabase.from("formula_templates").select("*").eq("kind", "F");
+      if (category) q = q.eq("category", category);
+      const { data, error } = await q.order("created_at", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user && !!category,
+    enabled: !!user,
   });
 }
 
@@ -77,7 +77,7 @@ export function useCreateFormulaTemplate() {
       name: string;
       formula: string;
       description?: string | null;
-      category: QuoteCategory;
+      category?: QuoteCategory | null;
       variables: Json;
     }) => {
       const { data, error } = await supabase
@@ -86,7 +86,7 @@ export function useCreateFormulaTemplate() {
           name: input.name,
           formula: input.formula,
           description: input.description ?? null,
-          category: input.category,
+          category: input.category ?? null,
           kind: "F",
           variables: input.variables,
         })
@@ -109,6 +109,7 @@ export function useUpdateFormulaTemplate() {
       name?: string;
       formula?: string;
       description?: string | null;
+      category?: QuoteCategory | null;
       variables?: Json;
     }) => {
       const { id, ...updates } = input;

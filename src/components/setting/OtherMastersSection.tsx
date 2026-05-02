@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Search, Variable, Ruler } from "lucide-react";
+import { Building2, Search, Variable, Ruler, Calculator } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,8 +8,10 @@ import { CustomersSection } from "./other-master/CustomersSection";
 import { UnitsSection } from "./other-master/UnitsSection";
 import { VariablesSection } from "./other-master/VariablesSection";
 import { LookupSection } from "./other-master/lookup/LookupSection";
+import { FormulasSection } from "./other-master/FormulasSection";
 
 const otherMasters = [
+  { id: "formulas", label: "計算式", icon: Calculator },
   { id: "customers", label: "取引先", icon: Building2 },
   { id: "lookup", label: "ルックアップ", icon: Search },
   { id: "variables", label: "変数", icon: Variable },
@@ -43,7 +45,7 @@ function MasterPlaceholder({ label, Icon }: { label: string; Icon: LucideIcon })
 }
 
 export function OtherMastersSection() {
-  const [active, setActive] = useState<OtherMasterId>("customers");
+  const [active, setActive] = useState<OtherMasterId>("formulas");
   const current = otherMasters.find((m) => m.id === active)!;
 
   return (
@@ -78,6 +80,7 @@ export function OtherMastersSection() {
 
       {/* Right detail */}
       <div className="flex-1 overflow-hidden">
+        {active === "formulas" && <FormulasSection />}
         {active === "customers" && <CustomersSection />}
         {active === "units" && <UnitsSection />}
         {active === "variables" && <VariablesSection />}
