@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Delete, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { useVariableDefinitions } from "@/hooks/useVariableDefinitions";
 import {
   useCreateFormulaTemplate,
@@ -53,59 +55,93 @@ const SOURCE_LABELS: Record<string, string> = {
   MANUAL: "手入力",
 };
 
-// 計算式構築用ボタン（mathjs 構文に従う）
-const BUTTON_SECTIONS: { label: string; buttons: { label: string; insert: string }[] }[] = [
-  {
-    label: "算術",
-    buttons: [
-      { label: "+", insert: " + " },
-      { label: "-", insert: " - " },
-      { label: "×", insert: " * " },
-      { label: "÷", insert: " / " },
-      { label: "//", insert: " \\ " }, // 整数除算 (mathjs)
-      { label: "pow", insert: "pow(" },
-    ],
-  },
-  {
-    label: "極値",
-    buttons: [
-      { label: "最小", insert: "min(" },
-      { label: "最大", insert: "max(" },
-    ],
-  },
-  {
-    label: "比較",
-    buttons: [
-      { label: "==", insert: " == " },
-      { label: ">", insert: " > " },
-      { label: ">=", insert: " >= " },
-      { label: "<", insert: " < " },
-      { label: "<=", insert: " <= " },
-    ],
-  },
-  {
-    label: "条件",
-    buttons: [
-      { label: "and", insert: " and " },
-      { label: "or", insert: " or " },
-      { label: "if", insert: " ? : " }, // 三項演算子
-    ],
-  },
-  {
-    label: "丸め",
-    buttons: [
-      { label: "切り上げ", insert: "ceil(" },
-      { label: "切り捨て", insert: "floor(" },
-      { label: "四捨五入", insert: "round(" },
-    ],
-  },
-  {
-    label: "補助",
-    buttons: [
-      { label: "(", insert: "(" },
-      { label: ")", insert: ")" },
-    ],
-  },
+// 数字（電卓配列）。表示順を 4×4 グリッドで「7 8 9 ÷ / 4 5 6 × / 1 2 3 - / 0 . ^ +」とする
+type PadKey = { label: string; insert: string; tone?: "operator" | "number" };
+
+const CALC_KEYS: PadKey[] = [
+  { label: "7", insert: "7", tone: "number" },
+  { label: "8", insert: "8", tone: "number" },
+  { label: "9", insert: "9", tone: "number" },
+  { label: "÷", insert: " / ", tone: "operator" },
+  { label: "4", insert: "4", tone: "number" },
+  { label: "5", insert: "5", tone: "number" },
+  { label: "6", insert: "6", tone: "number" },
+  { label: "×", insert: " * ", tone: "operator" },
+  { label: "1", insert: "1", tone: "number" },
+  { label: "2", insert: "2", tone: "number" },
+  { label: "3", insert: "3", tone: "number" },
+  { label: "-", insert: " - ", tone: "operator" },
+  { label: "0", insert: "0", tone: "number" },
+  { label: ".", insert: ".", tone: "number" },
+  { label: "^", insert: "^", tone: "operator" },
+  { label: "+", insert: " + ", tone: "operator" },
+];
+
+// 補助（カッコ・整数除算・pow）
+const HELPER_KEYS: PadKey[] = [
+  { label: "(", insert: "(" },
+  { label: ")", insert: ")" },
+  { label: "//", insert: " \\ " },
+  { label: "pow", insert: "pow(" },
+];
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** 計算式の preview 文字列を生成（変数コード→ラベル、*→×、/→÷） */
+function makeReadable(
+  formula: string,
+  vars: { code: string; label: string }[]
+): string {
+  if (!formula) return "";
+  let result = formula;
+  // 長い code から先に置換
+  const sorted = [...vars]
+    .filter((v) => v.label && v.code !== v.label)
+    .sort((a, b) => b.code.length - a.code.length);
+  for (const v of sorted) {
+    if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(v.code)) {
+      const re = new RegExp(`\\b${escapeRegex(v.code)}\\b`, "g");
+      result = result.replace(re, v.label);
+    } else {
+      result = result.split(v.code).join(v.label);
+    }
+  }
+  result = result.replace(/\s*\*\s*/g, " × ");
+  result = result.replace(/\s*\/\s*/g, " ÷ ");
+  result = result.replace(/\s+/g, " ").trim();
+  return result;
+}
+
+// 関数（極値・丸めを統合）
+const FUNCTION_KEYS: PadKey[] = [
+  { label: "最小", insert: "min(" },
+  { label: "最大", insert: "max(" },
+  { label: "切り上げ", insert: "ceil(" },
+  { label: "切り捨て", insert: "floor(" },
+  { label: "四捨五入", insert: "round(" },
+];
+
+// 条件（比較・論理を統合）
+const CONDITION_KEYS: PadKey[] = [
+  { label: "==", insert: " == " },
+  { label: ">", insert: " > " },
+  { label: ">=", insert: " >= " },
+  { label: "<", insert: " < " },
+  { label: "<=", insert: " <= " },
+  { label: "and", insert: " and " },
+  { label: "or", insert: " or " },
+  { label: "if", insert: " ? : " },
+];
+
+// ヒント: 関数のリファレンス
+const FUNCTION_REFERENCE: { code: string; label: string; example: string }[] = [
+  { code: "ceil", label: "切り上げ", example: "ceil(1.2) = 2" },
+  { code: "floor", label: "切り捨て", example: "floor(1.8) = 1" },
+  { code: "round", label: "四捨五入", example: "round(1.5) = 2" },
+  { code: "min", label: "最小", example: "min(3, 5) = 3" },
+  { code: "max", label: "最大", example: "max(3, 5) = 5" },
 ];
 
 export function FormulaDialog({
@@ -129,22 +165,31 @@ export function FormulaDialog({
 
   const formulaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // textarea のキャレット位置に文字列を挿入
-  const insertAtCursor = (text: string) => {
+  /**
+   * テキストを末尾に追加 or キャレット位置に挿入。
+   * - textarea にフォーカスがあるとき: その位置に挿入
+   * - そうでないとき: 末尾に追加（ボタンタブはこちら）
+   */
+  const insertOrAppend = (text: string) => {
     const ta = formulaRef.current;
-    const start = ta?.selectionStart ?? formula.length;
-    const end = ta?.selectionEnd ?? formula.length;
-    const next = formula.slice(0, start) + text + formula.slice(end);
-    setFormula(next);
-    // フォーカス + キャレット復帰
-    requestAnimationFrame(() => {
-      const ta2 = formulaRef.current;
-      if (!ta2) return;
-      ta2.focus();
-      const pos = start + text.length;
-      ta2.setSelectionRange(pos, pos);
-    });
+    if (ta && document.activeElement === ta) {
+      const start = ta.selectionStart ?? formula.length;
+      const end = ta.selectionEnd ?? formula.length;
+      const next = formula.slice(0, start) + text + formula.slice(end);
+      setFormula(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = start + text.length;
+        ta.setSelectionRange(pos, pos);
+      });
+    } else {
+      setFormula((prev) => prev + text);
+    }
   };
+
+  const backspaceFormula = () =>
+    setFormula((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
+  const clearFormula = () => setFormula("");
 
   useEffect(() => {
     if (!open) return;
@@ -233,20 +278,17 @@ export function FormulaDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl h-[85vh] gap-0 grid-rows-[auto_minmax(0,1fr)_auto]">
           <DialogHeader>
             <DialogTitle>
               {isEdit ? "計算式の編集" : "新規計算式"}
             </DialogTitle>
-            <DialogDescription>
-              使う変数を選び、それらを使った計算式を組み立てます
-            </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="overflow-hidden -mx-6 px-6 py-4 grid grid-cols-2 gap-6 min-h-0">
             {/* 左カラム: メタ情報 + 使う変数 */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-[1fr_auto] gap-3">
+            <div className="flex flex-col gap-4 min-h-0">
+              <div className="grid grid-cols-[1fr_auto] gap-3 shrink-0">
                 <div className="space-y-2">
                   <Label htmlFor="name">
                     名前<span className="text-destructive ml-1">*</span>
@@ -276,7 +318,7 @@ export function FormulaDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 shrink-0">
                 <Label htmlFor="description">説明</Label>
                 <Input
                   id="description"
@@ -288,8 +330,8 @@ export function FormulaDialog({
 
               <Separator />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 flex-1 min-h-0">
+                <div className="flex items-center justify-between shrink-0">
                   <Label>使う変数</Label>
                   <Button
                     variant="outline"
@@ -302,9 +344,9 @@ export function FormulaDialog({
                 </div>
 
                 {loadingVars ? (
-                  <Skeleton className="h-72" />
+                  <Skeleton className="h-72 shrink-0" />
                 ) : (
-                  <div className="border border-border rounded-md max-h-[420px] overflow-y-auto divide-y">
+                  <div className="border border-border rounded-md divide-y flex-1 min-h-0 overflow-y-auto">
                     {Array.from(grouped.entries()).map(([src, vars]) => (
                       <div key={src} className="p-2">
                         <div className="px-2 py-1 text-xs text-muted-foreground font-medium">
@@ -344,57 +386,235 @@ export function FormulaDialog({
             </div>
 
             {/* 右カラム: 計算式の構築 */}
-            <div className="space-y-3">
-              <Label htmlFor="formula">
+            <div className="flex flex-col gap-3 min-h-0">
+              <Label className="shrink-0">
                 計算式<span className="text-destructive ml-1">*</span>
               </Label>
-              <Textarea
-                id="formula"
-                ref={formulaRef}
-                value={formula}
-                onChange={(e) => setFormula(e.target.value)}
-                placeholder="例: (d/2)^2 * PI * L * rho/1000000 * P * Y"
-                rows={5}
-                className="font-mono text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                ボタン or 直接入力で構築してください
-              </p>
 
-              <div className="rounded-md border border-border/60 bg-muted/20 p-3 max-h-[420px] overflow-y-auto divide-y divide-border/40">
-                {/* 変数（選択中のみ） */}
-                <ButtonSection label="変数">
-                  {selectedList.length === 0 ? (
-                    <span className="text-xs text-muted-foreground italic">
-                      左で変数を選択してください
-                    </span>
-                  ) : (
-                    selectedList.map((v) => (
-                      <PadButton
-                        key={v.id}
-                        title={v.label}
-                        onClick={() => insertAtCursor(v.code)}
-                      >
-                        {v.code}
-                      </PadButton>
-                    ))
-                  )}
-                </ButtonSection>
+              <Tabs
+                defaultValue="buttons"
+                className="flex-1 min-h-0 flex flex-col gap-3"
+              >
+                <TabsList className="w-full shrink-0">
+                  <TabsTrigger value="buttons" className="flex-1">
+                    ボタン入力
+                  </TabsTrigger>
+                  <TabsTrigger value="text" className="flex-1">
+                    直接入力
+                  </TabsTrigger>
+                </TabsList>
 
-                {/* 算術 / 極値 / 比較 / 条件 / 丸め / 補助 */}
-                {BUTTON_SECTIONS.map((sec) => (
-                  <ButtonSection key={sec.label} label={sec.label}>
-                    {sec.buttons.map((b) => (
-                      <PadButton
-                        key={b.label}
-                        onClick={() => insertAtCursor(b.insert)}
+                {/* ボタン入力タブ */}
+                <TabsContent
+                  value="buttons"
+                  className="flex-1 min-h-0 mt-0 data-[state=active]:flex flex-col gap-3"
+                >
+                  {/* プレビュー（日本語ラベル化された式） */}
+                  <div className="rounded-md border border-border bg-card p-3 min-h-[88px] flex items-start justify-between gap-2 shadow-sm shrink-0">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                        プレビュー
+                      </div>
+                      <div className="text-sm break-all leading-relaxed">
+                        {formula ? (
+                          makeReadable(formula, variables ?? [])
+                        ) : (
+                          <span className="text-muted-foreground italic">
+                            下のボタンで式を組み立ててください
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={backspaceFormula}
+                        disabled={!formula}
+                        className="h-7 w-7 flex items-center justify-center rounded border bg-card hover:bg-accent disabled:opacity-40"
+                        title="1文字削除"
                       >
-                        {b.label}
-                      </PadButton>
-                    ))}
-                  </ButtonSection>
-                ))}
-              </div>
+                        <Delete className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearFormula}
+                        disabled={!formula}
+                        className="h-7 w-7 flex items-center justify-center rounded border bg-card hover:bg-accent disabled:opacity-40"
+                        title="全消去"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 電卓パッド + 補助 + 関数 */}
+                  <div className="rounded-md border border-border/60 bg-muted/20 p-3 flex-1 min-h-0 overflow-y-auto flex flex-col gap-3">
+                    {/* 変数 */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        変数
+                      </div>
+                      {selectedList.length === 0 ? (
+                        <div className="text-xs text-muted-foreground italic px-1 py-1">
+                          左で変数を選択してください
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {selectedList.map((v) => (
+                            <CalcButton
+                              key={v.id}
+                              tone="helper"
+                              onClick={() => insertOrAppend(v.code)}
+                            >
+                              <span className="text-xs leading-none">
+                                {v.label}
+                              </span>
+                            </CalcButton>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* 電卓グリッド (4×4) — 余った高さを吸収 */}
+                    <div className="grid grid-cols-4 gap-1.5 flex-1 min-h-[160px]">
+                      {CALC_KEYS.map((k) => (
+                        <CalcButton
+                          key={k.label}
+                          tone={k.tone}
+                          onClick={() => insertOrAppend(k.insert)}
+                          className="h-full"
+                        >
+                          {k.label}
+                        </CalcButton>
+                      ))}
+                    </div>
+
+                    {/* 補助 (( ) // pow) */}
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {HELPER_KEYS.map((k) => (
+                        <CalcButton
+                          key={k.label}
+                          tone="helper"
+                          onClick={() => insertOrAppend(k.insert)}
+                        >
+                          {k.label}
+                        </CalcButton>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* 関数（極値・丸め統合）: 5列グリッド */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        関数
+                      </div>
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {FUNCTION_KEYS.map((k) => (
+                          <CalcButton
+                            key={k.label}
+                            tone="helper"
+                            onClick={() => insertOrAppend(k.insert)}
+                          >
+                            <span className="text-[11px] leading-none">
+                              {k.label}
+                            </span>
+                          </CalcButton>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 条件（比較・論理統合）: 4列×2行グリッド */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        条件
+                      </div>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {CONDITION_KEYS.map((k) => (
+                          <CalcButton
+                            key={k.label}
+                            tone="helper"
+                            onClick={() => insertOrAppend(k.insert)}
+                          >
+                            {k.label}
+                          </CalcButton>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* 直接入力タブ */}
+                <TabsContent
+                  value="text"
+                  className="flex-1 min-h-0 mt-0 data-[state=active]:flex flex-col gap-3"
+                >
+                  <Textarea
+                    id="formula"
+                    ref={formulaRef}
+                    value={formula}
+                    onChange={(e) => setFormula(e.target.value)}
+                    placeholder="例: (d/2)^2 * PI * L * rho/1000000 * P * Y"
+                    className="font-mono text-sm flex-1 min-h-0 resize-none"
+                  />
+
+                  {/* ヒント */}
+                  <div className="rounded-md border border-border/60 bg-card p-3 shrink-0 max-h-[45%] overflow-y-auto space-y-4">
+                    {/* 変数 */}
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold">変数</div>
+                      {loadingVars ? (
+                        <Skeleton className="h-20" />
+                      ) : !variables || variables.length === 0 ? (
+                        <div className="text-sm text-muted-foreground italic">
+                          登録された変数がありません
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                          {variables.map((v) => (
+                            <div
+                              key={v.id}
+                              className="flex items-center gap-2 text-sm"
+                            >
+                              <code className="font-mono bg-muted px-2 py-0.5 rounded text-xs shrink-0 min-w-[3.5rem] text-center">
+                                {v.code}
+                              </code>
+                              <span className="truncate">{v.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* 関数 */}
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold">関数</div>
+                      <div className="space-y-1">
+                        {FUNCTION_REFERENCE.map((f) => (
+                          <div
+                            key={f.code}
+                            className="flex items-center gap-2 text-sm"
+                          >
+                            <code className="font-mono bg-muted px-2 py-0.5 rounded text-xs shrink-0 min-w-[3.5rem] text-center">
+                              {f.code}
+                            </code>
+                            <span className="text-muted-foreground">
+                              {f.label}
+                            </span>
+                            <code className="font-mono text-[11px] text-muted-foreground/80 ml-auto">
+                              {f.example}
+                            </code>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 
@@ -419,43 +639,34 @@ export function FormulaDialog({
 }
 
 // ────────────────────────────────────────────────────────────────────
-// 1セクション分のボタン群（label を左、ボタンを右に横並び）
+// 電卓キー（数字/演算子）— 大きめ正方形、tone でカラーバリエーション
 // ────────────────────────────────────────────────────────────────────
-function ButtonSection({
-  label,
+function CalcButton({
   children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start gap-3 py-1.5 first:pt-0 last:pb-0">
-      <div className="w-10 shrink-0 pt-1 text-[11px] font-medium text-muted-foreground">
-        {label}
-      </div>
-      <div className="flex-1 flex flex-wrap gap-1">{children}</div>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────
-// キーボード風の小ボタン
-// ────────────────────────────────────────────────────────────────────
-function PadButton({
-  children,
-  title,
+  tone = "number",
   onClick,
+  className,
 }: {
   children: React.ReactNode;
-  title?: string;
+  tone?: "number" | "operator" | "helper";
   onClick: () => void;
+  className?: string;
 }) {
+  const toneClass =
+    tone === "operator"
+      ? "bg-primary/10 text-primary hover:bg-primary/20 border-primary/30 font-semibold"
+      : tone === "helper"
+      ? "bg-muted text-foreground hover:bg-muted/70 border-border"
+      : "bg-card text-foreground hover:bg-accent border-border";
   return (
     <button
       type="button"
-      title={title}
       onClick={onClick}
-      className="h-7 min-w-[2rem] px-2 inline-flex items-center justify-center rounded-md border border-border bg-card text-xs font-mono shadow-sm hover:bg-accent hover:border-primary/40 active:translate-y-[1px] transition-all"
+      className={cn(
+        "h-10 inline-flex items-center justify-center rounded-md border text-base font-mono shadow-sm active:translate-y-[1px] transition-all",
+        toneClass,
+        className
+      )}
     >
       {children}
     </button>

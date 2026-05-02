@@ -26,6 +26,7 @@ import {
   useUpdateNodeFormula,
 } from "@/hooks/useSelectionTreeNodes";
 import { useFormulaTemplates } from "@/hooks/useFormulaTemplates";
+import { useVariableDefinitions } from "@/hooks/useVariableDefinitions";
 import { FormulaDialog } from "@/components/setting/other-master/FormulaDialog";
 
 interface Props {
@@ -45,6 +46,7 @@ export function LeafFormulaDialog({
 }: Props) {
   // カテゴリ縛りなく全 F テンプレートから選べる（カテゴリ跨ぎ利用可）
   const { data: templates, isLoading } = useFormulaTemplates();
+  const { data: variableDefs } = useVariableDefinitions();
   const updateNodeFormula = useUpdateNodeFormula();
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -147,19 +149,27 @@ export function LeafFormulaDialog({
                   <p className="text-xs text-muted-foreground">{selected.description}</p>
                 )}
                 {Array.isArray(selected.variables) && selected.variables.length > 0 && (
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {(selected.variables as unknown[]).map((v, i) => {
-                      const code =
-                        typeof v === "object" && v && "code" in v
-                          ? (v as { code: unknown }).code
-                          : null;
-                      if (typeof code !== "string") return null;
-                      return (
-                        <Badge key={i} variant="secondary" className="font-mono text-xs">
-                          {code}
-                        </Badge>
-                      );
-                    })}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(selected.variables as unknown[]).map((v, i) => {
+                        const code =
+                          typeof v === "object" && v && "code" in v
+                            ? (v as { code: unknown }).code
+                            : null;
+                        if (typeof code !== "string") return null;
+                        const label = variableDefs?.find((d) => d.code === code)?.label;
+                        return (
+                          <Badge key={i} variant="secondary" className="text-xs gap-1.5">
+                            <span className="font-mono">{code}</span>
+                            {label && (
+                              <span className="text-muted-foreground font-normal">
+                                {label}
+                              </span>
+                            )}
+                          </Badge>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

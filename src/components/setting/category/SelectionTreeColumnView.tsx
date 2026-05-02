@@ -254,16 +254,14 @@ function FormulaInfoPanel({ formulaId }: { formulaId: string }) {
   }
 
   return (
-    <div className="p-3">
-      <div className="rounded-md border border-border bg-muted/30 p-2.5 space-y-2">
-        <div className="flex items-center gap-1.5">
-          <Calculator className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-xs font-medium truncate">{formula.name}</span>
-        </div>
-        <code className="block text-[10px] font-mono text-muted-foreground break-all leading-relaxed">
-          {formula.formula}
-        </code>
+    <div className="p-3 space-y-3">
+      <div className="flex items-center gap-1.5">
+        <Calculator className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-medium truncate">{formula.name}</span>
       </div>
+      <code className="block text-xs font-mono text-muted-foreground break-all leading-relaxed">
+        {formula.formula}
+      </code>
     </div>
   );
 }
