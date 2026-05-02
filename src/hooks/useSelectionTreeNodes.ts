@@ -173,6 +173,17 @@ export function useUpdateColumnValues() {
           .from("selection_tree_nodes")
           .insert(inserts);
         if (insertError) throw insertError;
+
+        // データ整合性: 親が中間ノードになったので、親の formula_template_id をクリア
+        // （葉と中間ノードの兼務はデータ的に矛盾するため）
+        if (parentId) {
+          const { error: clearErr } = await supabase
+            .from("selection_tree_nodes")
+            .update({ formula_template_id: null })
+            .eq("id", parentId)
+            .not("formula_template_id", "is", null);
+          if (clearErr) throw clearErr;
+        }
       }
     },
     onSuccess: (_data, variables) => {

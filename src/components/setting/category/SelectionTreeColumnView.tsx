@@ -9,6 +9,7 @@ import {
   type SelectionTreeNode,
 } from "@/hooks/useSelectionTreeNodes";
 import { useNodeMasters } from "@/hooks/useNodeMasters";
+import { useFormulaTemplate } from "@/hooks/useFormulaTemplates";
 import { ColumnEditDialog } from "./ColumnEditDialog";
 import { LeafFormulaDialog } from "./LeafFormulaDialog";
 
@@ -86,6 +87,11 @@ export function SelectionTreeColumnView({ category }: Props) {
             selectedChildId={selectedChildId}
             // root は葉化できない（親ノードが無いので）
             canBecomeLeaf={parentNode != null}
+            parentFormulaId={parentNode?.formula_template_id ?? null}
+            // 各子ノードが子を持つかの判定用
+            hasChildren={(nodeId) =>
+              (childrenByParent.get(nodeId)?.length ?? 0) > 0
+            }
             onEditClick={() => setEditColumn({ parentId, children })}
             onLeafClick={() => parentNode && setLeafTarget(parentNode)}
             onNodeClick={(node) => {
@@ -123,6 +129,8 @@ interface ColumnPaneProps {
   children: SelectionTreeNode[];
   selectedChildId: string | null;
   canBecomeLeaf: boolean;
+  parentFormulaId: string | null;
+  hasChildren: (nodeId: string) => boolean;
   onEditClick: () => void;
   onLeafClick: () => void;
   onNodeClick: (n: SelectionTreeNode) => void;
@@ -133,11 +141,14 @@ function ColumnPane({
   children,
   selectedChildId,
   canBecomeLeaf,
+  parentFormulaId,
+  hasChildren,
   onEditClick,
   onLeafClick,
   onNodeClick,
 }: ColumnPaneProps) {
   const isEmpty = children.length === 0;
+  const isLeafWithFormula = isEmpty && !!parentFormulaId;
 
   return (
     <div className="w-56 shrink-0 border border-border rounded-md flex flex-col bg-card h-full">
@@ -145,18 +156,18 @@ function ColumnPane({
         <span
           className={cn(
             "text-sm font-medium truncate",
-            !masterName && "text-muted-foreground italic"
+            !masterName && !isLeafWithFormula && "text-muted-foreground italic"
           )}
         >
-          {masterName ?? "未設定"}
+          {isLeafWithFormula ? "計算式" : masterName ?? "未設定"}
         </span>
-        {!isEmpty && (
+        {(isLeafWithFormula || !isEmpty) && (
           <Button
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0 shrink-0"
-            onClick={onEditClick}
-            aria-label="ヘッダー編集"
+            onClick={isLeafWithFormula ? onLeafClick : onEditClick}
+            aria-label="編集"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -164,7 +175,9 @@ function ColumnPane({
       </div>
 
       <div className="flex-1 p-1 overflow-y-auto">
-        {isEmpty ? (
+        {isLeafWithFormula ? (
+          <FormulaInfoPanel formulaId={parentFormulaId!} />
+        ) : isEmpty ? (
           <div className="p-3 space-y-2">
             <Button
               variant="outline"
@@ -189,26 +202,67 @@ function ColumnPane({
           </div>
         ) : (
           <div className="space-y-0.5">
-            {children.map((node) => (
-              <button
-                key={node.id}
-                onClick={() => onNodeClick(node)}
-                className={cn(
-                  "w-full flex items-center gap-1 px-2 py-1.5 rounded-md text-sm transition-colors text-left",
-                  selectedChildId === node.id
-                    ? "bg-muted font-medium"
-                    : "hover:bg-muted/50"
-                )}
-              >
-                <span className="flex-1 truncate">{node.label}</span>
-                {node.formula_template_id && (
-                  <Calculator className="h-3 w-3 text-muted-foreground" />
-                )}
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            ))}
+            {children.map((node) => {
+              // 葉として確定: 計算式が紐づいていて、かつ子を持たない
+              const isLeafNode =
+                !!node.formula_template_id && !hasChildren(node.id);
+              return (
+                <button
+                  key={node.id}
+                  onClick={() => onNodeClick(node)}
+                  className={cn(
+                    "w-full flex items-center gap-1 px-2 py-1.5 rounded-md text-sm transition-colors text-left",
+                    selectedChildId === node.id
+                      ? "bg-muted font-medium"
+                      : "hover:bg-muted/50"
+                  )}
+                >
+                  <span className="flex-1 truncate">{node.label}</span>
+                  {isLeafNode && (
+                    <Calculator className="h-3 w-3 text-muted-foreground" />
+                  )}
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              );
+            })}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// 葉にリンクされた計算式の表示パネル
+// ────────────────────────────────────────────────────────────────────
+function FormulaInfoPanel({ formulaId }: { formulaId: string }) {
+  const { data: formula, isLoading } = useFormulaTemplate(formulaId);
+
+  if (isLoading) {
+    return (
+      <div className="p-3">
+        <Skeleton className="h-16" />
+      </div>
+    );
+  }
+  if (!formula) {
+    return (
+      <div className="p-3 text-xs text-muted-foreground italic">
+        計算式が見つかりません（削除された可能性）
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3">
+      <div className="rounded-md border border-border bg-muted/30 p-2.5 space-y-2">
+        <div className="flex items-center gap-1.5">
+          <Calculator className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-xs font-medium truncate">{formula.name}</span>
+        </div>
+        <code className="block text-[10px] font-mono text-muted-foreground break-all leading-relaxed">
+          {formula.formula}
+        </code>
       </div>
     </div>
   );

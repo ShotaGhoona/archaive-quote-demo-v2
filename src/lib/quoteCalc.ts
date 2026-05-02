@@ -125,6 +125,45 @@ export function resolveLookupValue(
 // ────────────────────────────────────────────────────────────────────
 
 /**
+ * 識別子として ASCII 安全か（mathjs は日本語等の識別子を扱えないので置換が必要）
+ */
+function isAsciiIdentifier(name: string): boolean {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+}
+
+/**
+ * 非ASCII変数名を __v0, __v1 ... に置換した式と scope を返す
+ */
+function sanitizeForMathjs(
+  formula: string,
+  scope: Record<string, number | string | null>
+): { safeFormula: string; safeScope: Record<string, number | string | null> } {
+  const renameMap = new Map<string, string>();
+  let counter = 0;
+  for (const key of Object.keys(scope)) {
+    if (!isAsciiIdentifier(key)) {
+      renameMap.set(key, `__v${counter++}`);
+    }
+  }
+
+  // 長い名前から先に置換（前方一致による誤置換を防ぐ）
+  const sortedKeys = Array.from(renameMap.keys()).sort(
+    (a, b) => b.length - a.length
+  );
+  let safeFormula = formula;
+  for (const orig of sortedKeys) {
+    const safe = renameMap.get(orig)!;
+    safeFormula = safeFormula.split(orig).join(safe);
+  }
+
+  const safeScope: Record<string, number | string | null> = {};
+  for (const [key, val] of Object.entries(scope)) {
+    safeScope[renameMap.get(key) ?? key] = val;
+  }
+  return { safeFormula, safeScope };
+}
+
+/**
  * formula を変数バインディングとともに評価
  *
  * @returns 数値 or null（評価失敗）
@@ -138,7 +177,8 @@ export function evaluateFormula(
     if (v === null || v === undefined) return null;
   }
   try {
-    const result = math.evaluate(formula, scope);
+    const { safeFormula, safeScope } = sanitizeForMathjs(formula, scope);
+    const result = math.evaluate(safeFormula, safeScope);
     if (typeof result === "number" && Number.isFinite(result)) return result;
     return null;
   } catch {
