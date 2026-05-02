@@ -473,14 +473,27 @@ function CategoryContent({
     }
   };
 
+  if (filtered.length === 0) {
+    return (
+      <div className="h-full p-4">
+        <button
+          onClick={handleAdd}
+          disabled={createDetail.isPending}
+          className={cn(
+            "w-full h-full border border-dashed border-border rounded-md flex flex-col items-center justify-center gap-2 text-muted-foreground transition-colors",
+            "hover:border-primary hover:text-primary disabled:opacity-50"
+          )}
+        >
+          <Plus className="h-6 w-6" />
+          <span className="text-sm">明細を追加</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
-        {filtered.length === 0 && (
-          <div className="text-center text-sm text-muted-foreground py-6">
-            まだ明細がありません
-          </div>
-        )}
         {filtered.map((d, i) => (
           <EditableDetailCard
             key={d.id}
@@ -489,17 +502,17 @@ function CategoryContent({
             detail={d}
           />
         ))}
-        <div className="flex justify-center pt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAdd}
-            disabled={createDetail.isPending}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            追加
-          </Button>
-        </div>
+        <button
+          onClick={handleAdd}
+          disabled={createDetail.isPending}
+          className={cn(
+            "w-full py-3 border border-dashed border-border rounded-md flex items-center justify-center gap-1.5 text-sm text-muted-foreground transition-colors",
+            "hover:border-primary hover:text-primary disabled:opacity-50"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          <span>明細を追加</span>
+        </button>
       </div>
     </ScrollArea>
   );
