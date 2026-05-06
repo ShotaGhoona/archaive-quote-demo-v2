@@ -1,5 +1,4 @@
-[project]
-id = "your-project-id"
+project_id = "archaive-quote-demo-v2"
 
 [api]
 port = 54321
@@ -9,7 +8,7 @@ max_rows = 1000
 
 [db]
 port = 54322
-major_version = 15
+major_version = 17
 
 [studio]
 port = 54323

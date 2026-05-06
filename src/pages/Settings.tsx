@@ -1,150 +1,135 @@
-import { useState } from "react";
-import { User, Palette } from "lucide-react";
+import { useState, type ComponentType } from "react";
+import {
+  Settings as SettingsIcon,
+  User,
+  Calculator,
+  Palette,
+  Layers,
+  Network,
+  Database,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { PageHeader } from "@/components/layout/PageHeader";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { ProfileSection } from "@/components/setting/ProfileSection";
+import { ThemeSection } from "@/components/setting/ThemeSection";
+import { CategoriesSection } from "@/components/setting/CategoriesSection";
+import { NodeMastersSection } from "@/components/setting/NodeMastersSection";
+import { OtherMastersSection } from "@/components/setting/OtherMastersSection";
 
-const userSettingsSections = [
-  { id: "profile", label: "プロフィール", icon: User },
-  { id: "theme", label: "テーマ設定", icon: Palette },
-] as const;
-
-type UserSettingsSection = (typeof userSettingsSections)[number]["id"];
-
-function ProfileSection() {
-  const { user } = useAuth();
-
-  return (
-    <div className="max-w-lg mx-auto space-y-8">
-      <div>
-        <h3 className="text-lg font-semibold">プロフィール</h3>
-        <p className="text-sm text-muted-foreground mt-1">アカウント情報</p>
-      </div>
-      <Separator />
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>メールアドレス</Label>
-          <Input value={user?.email || ""} disabled />
-        </div>
-        <div className="space-y-2">
-          <Label>ユーザーID</Label>
-          <Input value={user?.id || ""} disabled />
-        </div>
-      </div>
-      <Separator />
-      <div>
-        <h3 className="text-lg font-semibold">危険な操作</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          アカウントに対する取り消し不可能な操作
-        </p>
-        <Button variant="destructive" className="mt-4">
-          アカウント削除
-        </Button>
-      </div>
-    </div>
-  );
+interface SubTab {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  component: ComponentType;
 }
 
-function ThemeSection() {
-  const { theme, setTheme } = useTheme();
-
-  return (
-    <div className="max-w-lg mx-auto space-y-8">
-      <div>
-        <h3 className="text-lg font-semibold">テーマ設定</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          アプリの外観を変更します
-        </p>
-      </div>
-      <Separator />
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { value: "light", label: "ライト" },
-          { value: "dark", label: "ダーク" },
-          { value: "system", label: "システム" },
-        ].map((option) => (
-          <button
-            key={option.value}
-            onClick={() => setTheme(option.value)}
-            className={cn(
-              "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors hover:bg-accent",
-              theme === option.value
-                ? "border-primary bg-accent"
-                : "border-transparent"
-            )}
-          >
-            <div
-              className={cn(
-                "h-16 w-full rounded-md border",
-                option.value === "light" && "bg-white",
-                option.value === "dark" && "bg-zinc-900",
-                option.value === "system" &&
-                  "bg-gradient-to-r from-white to-zinc-900"
-              )}
-            />
-            <span className="text-sm font-medium">{option.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+interface SettingsCategory {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  subTabs: SubTab[];
 }
+
+const settingsCategories: SettingsCategory[] = [
+  {
+    id: "user",
+    label: "ユーザー設定",
+    icon: User,
+    subTabs: [
+      { id: "profile", label: "プロフィール", icon: User, component: ProfileSection },
+      { id: "theme", label: "テーマ設定", icon: Palette, component: ThemeSection },
+    ],
+  },
+  {
+    id: "quote",
+    label: "見積もり設定",
+    icon: Calculator,
+    subTabs: [
+      { id: "categories", label: "カテゴリ別設定", icon: Layers, component: CategoriesSection },
+      { id: "node-masters", label: "ノードマスタ", icon: Network, component: NodeMastersSection },
+      { id: "other-masters", label: "その他マスタ", icon: Database, component: OtherMastersSection },
+    ],
+  },
+];
 
 export default function Settings() {
-  const [activeSection, setActiveSection] =
-    useState<UserSettingsSection>("profile");
+  const [activeCategoryId, setActiveCategoryId] = useState("user");
+  const [activeSubTabIds, setActiveSubTabIds] = useState<Record<string, string>>({
+    user: "profile",
+    quote: "categories",
+  });
+
+  const activeCategory = settingsCategories.find((c) => c.id === activeCategoryId)!;
+  const activeSubTabId = activeSubTabIds[activeCategoryId];
+  const activeSubTab =
+    activeCategory.subTabs.find((t) => t.id === activeSubTabId) ?? activeCategory.subTabs[0];
+  const ActiveComponent = activeSubTab.component;
+
+  const setSubTab = (subTabId: string) => {
+    setActiveSubTabIds((prev) => ({ ...prev, [activeCategoryId]: subTabId }));
+  };
 
   return (
     <AppLayout>
-      <PageHeader title="設定" description="アプリケーションの設定を管理" />
-      <Tabs defaultValue="user" className="space-y-6">
-        <div className="border-b">
-          <TabsList className="h-auto p-0 bg-transparent rounded-none gap-6">
-            <TabsTrigger
-              value="user"
-              className="rounded-none border-b-2 border-transparent px-0 pb-3 pt-1 shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-            >
-              ユーザー設定
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="user">
-          <div className="flex gap-6">
-            {/* Left nav */}
-            <nav className="w-48 shrink-0 space-y-1">
-              {userSettingsSections.map((section) => (
+      <div className="flex flex-col h-full bg-card">
+        {/* Top-level category tabs */}
+        <div className="border-b border-border px-6 pt-4 pb-0 shrink-0 bg-card">
+          <div className="flex items-center gap-2 mb-3">
+            <SettingsIcon className="h-4 w-4 text-muted-foreground" />
+            <h1 className="text-base font-semibold text-foreground">設定</h1>
+          </div>
+          <nav className="flex gap-1 -mb-px">
+            {settingsCategories.map((cat) => {
+              const Icon = cat.icon;
+              return (
                 <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  key={cat.id}
+                  onClick={() => setActiveCategoryId(cat.id)}
                   className={cn(
-                    "w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                    activeSection === section.id
-                      ? "bg-accent text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    "flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 transition-colors",
+                    activeCategoryId === cat.id
+                      ? "border-primary text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <section.icon className="h-4 w-4" />
-                  {section.label}
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{cat.label}</span>
                 </button>
-              ))}
-            </nav>
+              );
+            })}
+          </nav>
+        </div>
 
-            {/* Right content */}
-            <div className="flex-1 min-w-0">
-              {activeSection === "profile" && <ProfileSection />}
-              {activeSection === "theme" && <ThemeSection />}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        {/* Sub-tabs */}
+        <div className="border-b border-border px-6 pt-3 pb-0 shrink-0 bg-card">
+          <nav className="flex gap-1 -mb-px">
+            {activeCategory.subTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setSubTab(tab.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 transition-colors",
+                    activeSubTab.id === tab.id
+                      ? "border-primary text-foreground font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          <ActiveComponent />
+        </div>
+      </div>
     </AppLayout>
   );
 }

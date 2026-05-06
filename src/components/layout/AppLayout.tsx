@@ -7,10 +7,10 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar />
-      <SidebarInset>
-        <main className="flex-1 p-6">{children}</main>
+      <SidebarInset className="overflow-hidden">
+        <main className="flex-1 overflow-hidden flex flex-col">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
