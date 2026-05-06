@@ -46,7 +46,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b">
         <div className="flex items-center justify-between px-2 py-1">
           <h2 className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
-            POC App
+            Archaive-Quote
           </h2>
           <button
             onClick={toggleSidebar}

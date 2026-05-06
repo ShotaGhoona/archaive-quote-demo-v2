@@ -50,7 +50,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">POC App</CardTitle>
+          <CardTitle className="text-2xl">Archaive-Quote</CardTitle>
           <CardDescription>
             アカウントにサインインまたは新規登録
           </CardDescription>
